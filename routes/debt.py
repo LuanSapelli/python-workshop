@@ -4,23 +4,6 @@ from flask import request, jsonify
 from app import app, db
 
 
-# Debt Routes
-@app.route('/person/debt/<person_id>', methods=['GET'])
-def get_person_debts(person_id):
-    person = Person.query.get(person_id)
-
-    debts = person_debts(person.debts)
-
-    result = {
-        'id': person.id,
-        'name': person.name,
-        'email': person.email,
-        'debts': debts
-    }
-
-    return jsonify(result)
-
-
 @app.route('/debt')
 def get_all_debt():
     debts = Debt.query.all()
@@ -29,8 +12,9 @@ def get_all_debt():
     for debt in debts:
         data = {}
         data['id'] = debt.id
-        data['person_id'] = debt.person_id
-        data['paid'] = debt.paid
+        data['person_cpf'] = debt.person_cpf
+        data['company'] = debt.company
+        data['expiration'] = debt.expiration
         data['value'] = debt.value
 
         result.append(data)
@@ -44,8 +28,9 @@ def get_debt(id):
 
     result = {
         'id': debt.id,
-        'person_id': debt.person_id,
-        'paid': debt.paid,
+        'person_cpf': debt.person_cpf,
+        'company': debt.company,
+        'expiration': debt.expiration,
         'value': debt.value
     }
 
@@ -54,11 +39,12 @@ def get_debt(id):
 
 @app.route('/debt', methods=['POST'])
 def insert_debt():
-    person_id = request.json['person_id']
-    paid = request.json['paid']
+    person_cpf = request.json['person_cpf']
+    company = request.json['company']
+    expiration = request.json['expiration']
     value = request.json['value']
 
-    debt = Debt(person_id, paid, value)
+    debt = Debt(person_cpf, company, expiration, value)
     db.session.add(debt)
     db.session.commit()
 
@@ -69,8 +55,9 @@ def insert_debt():
 def update_debt():
     id = request.json['id']
     debt = Debt.query.get(id)
-    debt.person_id = request.json['person_id']
-    debt.paid = request.json['paid']
+    debt.person_cpf = request.json['person_cpf']
+    debt.company = request.json['company']
+    debt.expiration = request.json['expiration']
     debt.value = request.json['value']
 
     db.session.commit()
@@ -88,26 +75,13 @@ def delete_debt(id):
     return "Dívida deletada com sucesso!"
 
 
-@app.route('/debt/pay', methods=['PUT'])
-def debt_payment():
-    id = request.json['id']
-    debt = Debt.query.get(id)
+@app.route('/person/debt/<person_cpf>', methods=['GET'])
+def get_person_debts(person_cpf):
+    person = Person.query.get(person_cpf)
 
-    if debt.paid:
-        return "A dívida já está paga"
-    else:
-        debt.paid = True;
-    db.session.commit()
+    debts = person_debts(person.debts)
 
-    return "Dívida paga com sucesso!"
-
-
-@app.route('/debt/paid', methods = ['GET'])
-def get_paid_debts():
-    debts = Debt.query.filter(Debt.paid).all()
-
-    results = person_debts(debts)
-    return jsonify(results)
+    return jsonify(debts)
 
 
 def person_debts(debts):
@@ -117,8 +91,9 @@ def person_debts(debts):
         data = {}
 
         data['id'] = debt.id
-        data['person_id'] = debt.person_id
-        data['paid'] = debt.paid
+        data['person_cpf'] = debt.person_cpf
+        data['company'] = debt.company
+        data['expiration'] = debt.expiration
         data['value'] = debt.value
 
         result.append(data)

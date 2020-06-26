@@ -3,7 +3,6 @@ from flask import request, jsonify
 from app import app, db
 
 
-# Person Routes
 @app.route('/person')
 def get_all_person():
     people = Person.query.all()
@@ -11,8 +10,9 @@ def get_all_person():
     result = []
     for person in people:
         data = {}
-        data['id'] = person.id
         data['name'] = person.name
+        data['cpf'] = person.cpf
+        data['password'] = person.password
         data['email'] = person.email
 
         result.append(data)
@@ -20,13 +20,14 @@ def get_all_person():
     return jsonify(result)
 
 
-@app.route('/person/<id>', methods=['GET'])
-def get_person(id):
-    person = Person.query.get(id)
+@app.route('/person/<cpf>', methods=['GET'])
+def get_person(cpf):
+    person = Person.query.get(cpf)
 
     result = {
-        'id': person.id,
         'name': person.name,
+        'cpf': person.cpf,
+        'password': person.password,
         'email': person.email
     }
 
@@ -36,9 +37,11 @@ def get_person(id):
 @app.route('/person', methods=['POST'])
 def insert_person():
     name = request.json['name']
+    cpf = request.json['cpf']
+    password = request.json['password']
     email = request.json['email']
 
-    person = Person(name, email)
+    person = Person(name, cpf, password, email)
     db.session.add(person)
     db.session.commit()
 
@@ -47,9 +50,10 @@ def insert_person():
 
 @app.route('/person', methods=['PUT'])
 def update_person():
-    id = request.json['id']
-    person = Person.query.get(id)
+    cpf = request.json['cpf']
+    person = Person.query.get(cpf)
     person.name = request.json['name']
+    person.cpf = request.json['cpf']
     person.email = request.json['email']
 
     db.session.commit()
@@ -57,9 +61,9 @@ def update_person():
     return "Pessoa atualizada com sucesso!"
 
 
-@app.route('/person/<id>', methods=['DELETE'])
-def delete_person(id):
-    person = Person.query.get(id)
+@app.route('/person/<cpf>', methods=['DELETE'])
+def delete_person(cpf):
+    person = Person.query.get(cpf)
 
     db.session.delete(person)
     db.session.commit()
